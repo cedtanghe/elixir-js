@@ -45,6 +45,12 @@ gulp.task('compress-js', function()
     .pipe(concat('elixir.min.js'))
     .pipe(uglify().on('error', swallowError))
     .pipe(gulp.dest('dist/'));
+    
+    gulp.src([
+        'src/**/*.js'
+    ])
+    .pipe(concat('elixir.extended.js'))
+    .pipe(gulp.dest('dist/'));
 });
 
 /**
@@ -55,7 +61,7 @@ gulp.task('lint', function()
     paths.forEach(function(path)
     {
         gulp.src([
-            'dist/elixir.min.js'
+            'dist/elixir.extended.js'
         ])
         .pipe(jshint())
         .pipe(jshint.reporter('default'));

@@ -25,11 +25,6 @@ this.Elixir.Core = this.Elixir.Core || {};
     
     p.initialize = function(){};
     
-    /**
-     * @param {string|null} e
-     * @param {function} callback
-     * @returns {Boolean}
-     */
     p.has = function(e, callback)
     {
         e = e || null;
@@ -69,34 +64,23 @@ this.Elixir.Core = this.Elixir.Core || {};
         return false;
     };
     
-    /**
-     * @param {string} e
-     * @param {function|object} paramsOrCallback
-     * @param {function} function
-     */
     p.on = function(e, paramsOrCallback, callback)
     {
         var self = this;
-        var params = arguments.length == 3 ? paramsOrCallback : {};
-        var callback = arguments.length == 3 ? callback : paramsOrCallback;
         
-        $(self).on('event_' + e, params, callback);
+        $(self).on(
+            'event_' + e, 
+            arguments.length === 3 ? paramsOrCallback : {}, 
+            arguments.length === 3 ? callback : paramsOrCallback
+        );
     };
     
-    /**
-     * @param {string} e
-     * @param {function} callback
-     */
     p.off = function(e, callback)
     {
         var self = this;
         $(self).off('event_' + e, callback);
     };
     
-    /**
-     * @param {string} e
-     * @param {object} params
-     */
     p.trigger = function(e, params)
     {
         var self = this;

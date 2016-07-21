@@ -17,9 +17,6 @@ this.Elixir.Control = this.Elixir.Control || {};
 {
     'use strict';
     
-    /**
-     * @param {object} breakpoints
-     */
     function Breakpoints(breakpoints)
     {
         var self = this;
@@ -36,8 +33,8 @@ this.Elixir.Control = this.Elixir.Control || {};
     };
     
     var p = Elixir.Util.extend(Breakpoints, Elixir.Core.Dispatcher);
-    p._current;
-    p._breakpoints;
+    p._current = null;
+    p._breakpoints = null;
     
     p.initialize = function(breakpoints)
     {
@@ -73,10 +70,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         self.getCurrent();
     };
     
-    /**
-     * @param {string} keyOrElement
-     * @returns {string | $}
-     */
     p.getCurrent = function(keyOrElement)
     {
         var self = this;
@@ -96,7 +89,7 @@ this.Elixir.Control = this.Elixir.Control || {};
             }
         }
         
-        if(null !== element && self._current != element)
+        if(null !== element && self._current !== element)
         {
             self._current = element;
             self.trigger(s.BREAKPOINT_CHANGE, {current:element});
@@ -106,7 +99,7 @@ this.Elixir.Control = this.Elixir.Control || {};
             self._current = element;
         }
         
-        if(keyOrElement == 'key')
+        if(keyOrElement === 'key')
         {
             return key;
         }
@@ -116,10 +109,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    /**
-     * @param {string} key
-     * @returns {boolean}
-     */
     p.is = function(key)
     {
         var self = this;

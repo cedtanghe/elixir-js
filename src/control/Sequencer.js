@@ -34,10 +34,10 @@ this.Elixir.Control = this.Elixir.Control || {};
     s.ITEM_CLOSE_FINISHED = 'item_close_finished';
     
     var p = Elixir.Util.extend(Sequencer, Elixir.Core.Dispatcher);
-    p._sequences;
-    p._status;
-    p._total;
-    p._auto;
+    p._sequences = null;
+    p._status = null;
+    p._total = null;
+    p._auto = null;
     
     p.initialize = function()
     {
@@ -48,13 +48,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._auto = false;
     };
     
-    /**
-     * @param {mixed} item
-     * @param {function} launch
-     * @param {function|string} launchCallbackOrEvent
-     * @param {function} close
-     * @param {function|string} closeCallbackOrEvent
-     */
     p.addItem = function(item, launch, launchCallbackOrEvent, close, closeCallbackOrEvent)
     {
         var self = this;
@@ -62,7 +55,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         
         for(i in self._sequences)
         {
-            if (self._sequences[i].item == item)
+            if (self._sequences[i].item === item)
             {
                 return;
             }
@@ -73,9 +66,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         );
     };
     
-    /**
-     * @param {mixed} item
-     */
     p.removeItem = function(item)
     {
         var self = this;
@@ -88,12 +78,12 @@ this.Elixir.Control = this.Elixir.Control || {};
             
             if(sequence.item === item)
             {
-                if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent != 'callback')
+                if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent !== 'callback')
                 {
                     sequence.item.off(sequence.launchCallbackOrEvent, self._transitionItemEventFinished);
                 }
 
-                if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent != 'callback')
+                if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent !== 'callback')
                 {
                     sequence.item.off(sequence.launchCallbackOrEvent, self._transitionItemEventFinished);
                 }
@@ -108,9 +98,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    /**
-     * @param {boolean} trigger
-     */
     p.removeItems = function(trigger)
     {
         trigger = trigger || true;
@@ -123,12 +110,12 @@ this.Elixir.Control = this.Elixir.Control || {};
         {
             sequence = self._sequences[i];
             
-            if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent != 'callback')
+            if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent !== 'callback')
             {
                 sequence.item.off(sequence.launchCallbackOrEvent, self._transitionItemEventFinished);
             }
             
-            if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent != 'callback')
+            if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent !== 'callback')
             {
                 sequence.item.off(sequence.launchCallbackOrEvent, self._transitionItemEventFinished);
             }
@@ -140,14 +127,11 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._checkSequence(trigger);
     };
     
-    /**
-     * @throws
-     */
     p.reverse = function()
     {
         var self = this;
         
-        if (self._status != s.CLOSE_FINISHED && self._status != s.LAUNCH_FINISHED)
+        if (self._status !== s.CLOSE_FINISHED && self._status !== s.LAUNCH_FINISHED)
         {
             throw 'You can not reverse the sequence during a transition';
         }
@@ -155,14 +139,11 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._sequences.reverse();
     };
     
-    /**
-     * @throws
-     */
     p.shuffle = function()
     {
         var self = this;
         
-        if (self._status != s.CLOSE_FINISHED && self._status != s.LAUNCH_FINISHED)
+        if (self._status !== s.CLOSE_FINISHED && self._status !== s.LAUNCH_FINISHED)
         {
             throw 'You can not shuffle the sequence during a transition';
         }
@@ -170,19 +151,12 @@ this.Elixir.Control = this.Elixir.Control || {};
         Elixir.Util.shuffle(self._sequences);
     };
     
-    /**
-     * @returns {boolean}
-     */
     p.inTransition = function()
     {
         var self = this;
-        return self._status == s.LAUNCH || self._status == s.CLOSE;
+        return self._status === s.LAUNCH || self._status === s.CLOSE;
     };
     
-    /**
-     * @param {mixed} item
-     * @returns {string}
-     */
     p.getItemStatus = function(item)
     {
         var self = this;
@@ -202,18 +176,12 @@ this.Elixir.Control = this.Elixir.Control || {};
         return null;
     };
     
-    /**
-     * @returns {string}
-     */
     p.getStatus = function()
     {
         var self = this;
         return self._status;
     };
     
-    /**
-     * @param {string} value
-     */
     p.setStatus = function(value)
     {
         var self = this;
@@ -241,7 +209,7 @@ this.Elixir.Control = this.Elixir.Control || {};
     {
         var self = this;
         
-        if(self._sequences.length == 0)
+        if(self._sequences.length === 0)
         {
             self._status = s.LAUNCH;
             self._checkSequence();
@@ -253,16 +221,13 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    /**
-     * @param {number} time
-     */
     p.launch = function(time)
     {
         time = time || 0;
         
         var self = this;
         
-        if(self._sequences.length == 0)
+        if(self._sequences.length === 0)
         {
             self._status = s.LAUNCH;
             self._checkSequence();
@@ -282,10 +247,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    /**
-     * @param {mixed} item
-     * @param {number} time
-     */
     p.launchItem = function(item, time)
     {
         time = time || 0;
@@ -293,11 +254,11 @@ this.Elixir.Control = this.Elixir.Control || {};
         
         var self = this;
         
-        if(self._status == s.CLOSE)
+        if(self._status === s.CLOSE)
         {
             throw 'A type transition is already underway "close"';
         }
-        else if(self._status == s.CLOSE_FINISHED)
+        else if(self._status === s.CLOSE_FINISHED)
         {
             self._total = 0;
             self.trigger(s.LAUNCH);
@@ -317,7 +278,7 @@ this.Elixir.Control = this.Elixir.Control || {};
             {
                 if(sequence.item === item)
                 {
-                    if(sequence.status != s.LAUNCH && sequence.status != s.LAUNCH_FINISHED)
+                    if(sequence.status !== s.LAUNCH && sequence.status !== s.LAUNCH_FINISHED)
                     {
                         found = true;
                     }
@@ -325,7 +286,7 @@ this.Elixir.Control = this.Elixir.Control || {};
                     break;
                 }
             }
-            else if(sequence.status != s.LAUNCH && sequence.status != s.LAUNCH_FINISHED)
+            else if(sequence.status !== s.LAUNCH && sequence.status !== s.LAUNCH_FINISHED)
             {
                 found = true;
                 break;
@@ -348,7 +309,7 @@ this.Elixir.Control = this.Elixir.Control || {};
                 sequence.launch(sequence.item);
                 self._transitionItemFinished(sequence.item);
             }
-            else if(sequence.launchCallbackOrEvent == 'callback')
+            else if(sequence.launchCallbackOrEvent === 'callback')
             {
                 sequence.launch(
                     sequence.item,
@@ -370,7 +331,7 @@ this.Elixir.Control = this.Elixir.Control || {};
     {
         var self = this;
         
-        if(self._sequences.length == 0)
+        if(self._sequences.length === 0)
         {
             self._status = s.CLOSE;
             self._checkSequence();
@@ -382,16 +343,13 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    /**
-     * @param {number} time
-     */
     p.close = function(time)
     {
         time = time || 0;
         
         var self = this;
         
-        if(self._sequences.length == 0)
+        if(self._sequences.length === 0)
         {
             self._status = s.CLOSE;
             self._checkSequence();
@@ -412,10 +370,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    /**
-     * @param {mixed} item
-     * @param {number} time
-     */
     p.closeItem = function(item, time)
     {
         time = time || 0;
@@ -423,11 +377,11 @@ this.Elixir.Control = this.Elixir.Control || {};
         
         var self = this;
         
-        if(self._status == s.LAUNCH)
+        if(self._status === s.LAUNCH)
         {
             throw 'A type transition is already underway "launch"';
         }
-        else if(self._status == s.LAUNCH_FINISHED)
+        else if(self._status === s.LAUNCH_FINISHED)
         {
             self._total = 0;
             self.trigger(s.CLOSE);
@@ -447,7 +401,7 @@ this.Elixir.Control = this.Elixir.Control || {};
             {
                 if(sequence.item === item)
                 {
-                    if(sequence.status != s.CLOSE && sequence.status != s.CLOSE_FINISHED)
+                    if(sequence.status !== s.CLOSE && sequence.status !== s.CLOSE_FINISHED)
                     {
                         found = true;
                     }
@@ -455,7 +409,7 @@ this.Elixir.Control = this.Elixir.Control || {};
                     break;
                 }
             }
-            else if(sequence.status != s.CLOSE && sequence.status != s.CLOSE_FINISHED)
+            else if(sequence.status !== s.CLOSE && sequence.status !== s.CLOSE_FINISHED)
             {
                 found = true;
                 break;
@@ -478,7 +432,7 @@ this.Elixir.Control = this.Elixir.Control || {};
                 sequence.close(sequence.item);
                 self._transitionItemFinished(sequence.item);
             }
-            else if(sequence.closeCallbackOrEvent == 'callback')
+            else if(sequence.closeCallbackOrEvent === 'callback')
             {
                 sequence.close(
                     sequence.item,
@@ -510,9 +464,9 @@ this.Elixir.Control = this.Elixir.Control || {};
         
         self._total++;
         
-        if (self._status == s.LAUNCH)
+        if (self._status === s.LAUNCH)
         {
-            if (self._total == self._sequences.length)
+            if (self._total === self._sequences.length)
             {
                 self._auto = false;
             }
@@ -523,7 +477,7 @@ this.Elixir.Control = this.Elixir.Control || {};
                 
                 if(sequence.item === item)
                 {
-                    if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent != 'callback')
+                    if(null !== sequence.launchCallbackOrEvent && sequence.launchCallbackOrEvent !== 'callback')
                     {
                         sequence.item.off(sequence.launchCallbackOrEvent, self._transitionItemEventFinished);
                     }
@@ -546,7 +500,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
         else
         {
-            if(self._total == self._sequences.length)
+            if(self._total === self._sequences.length)
             {
                 self._auto = false;
             }
@@ -557,7 +511,7 @@ this.Elixir.Control = this.Elixir.Control || {};
                 
                 if(sequence.item === item)
                 {
-                    if(null !== sequence.closeCallbackOrEvent && sequence.closeCallbackOrEvent != 'callback')
+                    if(null !== sequence.closeCallbackOrEvent && sequence.closeCallbackOrEvent !== 'callback')
                     {
                         sequence.item.off(sequence.closeCallbackOrEvent, self._transitionItemEventFinished);
                     }
@@ -588,13 +542,13 @@ this.Elixir.Control = this.Elixir.Control || {};
         var sequence;
         var i;
 	
-        if(self._status == s.LAUNCH)
+        if(self._status === s.LAUNCH)
         {
             for(i in self._sequences)
             {
                 sequence = self._sequences[i];
                 
-                if (sequence.status != s.LAUNCH_FINISHED)
+                if (sequence.status !== s.LAUNCH_FINISHED)
                 {
                     return;
                 }
@@ -607,13 +561,13 @@ this.Elixir.Control = this.Elixir.Control || {};
                 self.trigger(s.LAUNCH_FINISHED);
             }
         }
-        else if(self._status == s.CLOSE)
+        else if(self._status === s.CLOSE)
         {
             for(i in self._sequences)
             {
                 sequence = self._sequences[i];
                 
-                if (sequence.status != s.CLOSE_FINISHED)
+                if (sequence.status !== s.CLOSE_FINISHED)
                 {
                     return;
                 }

@@ -4,6 +4,12 @@
 
 this.Elixir = this.Elixir || {};
 
+/*
+|--------------------------------------------------------------------------
+| UTIL
+|--------------------------------------------------------------------------
+*/
+
 (function($)
 {
     'use strict';
@@ -17,19 +23,11 @@ this.Elixir = this.Elixir || {};
     var s = Util;
     s._polyfill = {};
     
-    /**
-     * @param {string} name
-     * @returns {Boolean}
-     */
     s.isPolyfilled = function(name)
     {
         return s._polyfill[name] === true;
     };
     
-    /**
-     * @param {string} name
-     * @returns {Boolean}
-     */
     s.polyfill = function(name)
     {
         if(!s.isPolyfilled(name))
@@ -46,6 +44,8 @@ this.Elixir = this.Elixir || {};
 
                             if(typeof (props) === 'object') 
                             {
+                                var prop;
+                                
                                 for(prop in props) 
                                 {
                                     if(props.hasOwnProperty((prop))) 
@@ -119,11 +119,6 @@ this.Elixir = this.Elixir || {};
         return true;
     };
     
-    /**
-     * @param {string} childClass
-     * @param {string} superClass
-     * @returns {object}
-     */
     s.extend = function(childClass, superClass)
     {
         s.polyfill('Object.create');
@@ -141,32 +136,16 @@ this.Elixir = this.Elixir || {};
         return childClass.prototype;
     };
     
-    /**
-     * @param {number} value
-     * @param {number} round
-     * @returns {number}
-     */
     s.round = function(value, round)
     {
         return Math.round(value / round) * round;
     };
     
-    /**
-     * @param {number} min
-     * @param {number} max
-     * @returns {number}
-     */
     s.random = function(min, max)
     {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     };
-      
-    /**
-     * @param {number} value
-     * @param {number} min
-     * @param {number} max
-     * @returns {number}
-     */
+    
     s.normalize = function(value, min, max)
     {
         if(value < min)
@@ -180,13 +159,7 @@ this.Elixir = this.Elixir || {};
 
         return (value - min) / (max - min);
     };
-	
-    /**
-     * @param {number} value
-     * @param {number} min
-     * @param {number} max
-     * @returns {number}
-     */
+    
     s.interpolate = function(value, min, max) 
     {
         if (value < 0)
@@ -200,24 +173,12 @@ this.Elixir = this.Elixir || {};
 
         return min + (max - min) * value;
     };
-
-    /**
-     * @param {number} value
-     * @param {number} min1
-     * @param {number} max1
-     * @param {number} min2
-     * @param {number} max2
-     * @returns {number}
-     */
+    
     s.map = function(value, min1, max1, min2, max2) 
     {
         return interpolate(normalize(value, min1, max1), min2, max2);
     };
     
-    /**
-     * @param {array} arr
-     * @returns {array}
-     */
     s.shuffle = function(arr)
     {
         var n = arr.length;
@@ -234,31 +195,18 @@ this.Elixir = this.Elixir || {};
         return arr;
     };
     
-    /**
-     * @param {string} str
-     * @returns {Boolean}
-     */
     s.isNotEmpty = function(str)
     {
         var pattern = /^\s*$/;
         return !pattern.test(str);
     };
     
-    /**
-     * @param {string} mail
-     * @returns {Boolean}
-     */
     s.isEmail = function(mail)
     {
         var pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
         return pattern.test(mail);
     };
     
-    /**
-     * @param {string} str
-     * @param {RegExp} regex
-     * @returns {Boolean}
-     */
     s.test = function(str, regex)
     {
         return regex.test(str);

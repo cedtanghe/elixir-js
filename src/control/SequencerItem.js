@@ -29,14 +29,14 @@ this.Elixir.Control = this.Elixir.Control || {};
     }
     
     var p = SequencerItem.prototype;
-    p.item;
-    p.status;
-    p.launch;
-    p.launchCallbackOrEvent;
-    p.close;
-    p.closeCallbackOrEvent;
-    p._launchId;
-    p._closeId;
+    p.item = null;
+    p.status = null;
+    p.launch = null;
+    p.launchCallbackOrEvent = null;
+    p.close = null;
+    p.closeCallbackOrEvent = null;
+    p._launchId = null;
+    p._closeId = null;
     
     p.initialize = function(item, launch, launchCallbackOrEvent, close, closeCallbackOrEvent)
     {
@@ -52,10 +52,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._closeId = null;
     };
     
-    /**
-     * @param {function} callback
-     * @param {number} time
-     */
     p.launchTime = function(callback, time)
     {
         var self = this;
@@ -64,7 +60,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._launchId = setTimeout(
             function()
             {
-                if(self.status == Elixir.Control.Sequencer.CLOSE_FINISHED)
+                if(self.status === Elixir.Control.Sequencer.CLOSE_FINISHED)
                 {
                     callback(self.item);
                 }
@@ -73,10 +69,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         );
     };
     
-    /**
-     * @param {function} callback
-     * @param {number} time
-     */
     p.closeTime = function(callback, time)
     {
         var self = this;
@@ -85,7 +77,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._closeId = setTimeout(
             function()
             {
-                if(self.status == Elixir.Control.Sequencer.LAUNCH_FINISHED)
+                if(self.status === Elixir.Control.Sequencer.LAUNCH_FINISHED)
                 {
                     callback(self.item);
                 }

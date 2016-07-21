@@ -30,13 +30,13 @@ this.Elixir.Control = this.Elixir.Control || {};
     s.ANIMATION_CANCEL = 'animation_cancel';
     
     var p = Elixir.Util.extend(RequestAnimation, Elixir.Core.Dispatcher);
-    p._id;
-    p._callbacks;
-    p._then;
-    p._counter;
-    p._delay;
-    p._rep;
-    p._isRun;
+    p._id = null;
+    p._callbacks = null;
+    p._then = null;
+    p._counter = null;
+    p._delay = null;
+    p._rep = null;
+    p._isRun = null;
     
     p.initialize = function(delay, rep)
     {
@@ -54,64 +54,42 @@ this.Elixir.Control = this.Elixir.Control || {};
         Elixir.Util.polyfill('Date.now');
     };
     
-    /**
-     * @returns {number}
-     */
     p.getDelay = function()
     {
         var self = this;
         return self._delay;
     };
     
-    /**
-     * @returns {number}
-     */
     p.getRep = function()
     {
         var self = this;
         return self._rep;
     };
     
-    /**
-     * @returns {number}
-     */
     p.getCount = function()
     {
         var self = this;
         return self._counter;
     };
     
-    /**
-     * @returns {boolean}
-     */
     p.isRun = function()
     {
         var self = this;
         return self._isRun;
     };
     
-    /**
-     * @returns {boolean}
-     */
     p.isComplete = function()
     {
         var self = this;
-        return self._rep > 0 && self._counter == self._rep;
+        return self._rep > 0 && self._counter === self._rep;
     };
     
-    /**
-     * @param {function} callback
-     * @param {mixed} params
-     */
     p.add = function(callback, params)
     {
         var self = this;
         self._callbacks.push([callback, params]);
     };
     
-    /**
-     * @param {function} callback
-     */
     p.remove = function(callback)
     {
         var self = this;
@@ -169,10 +147,10 @@ this.Elixir.Control = this.Elixir.Control || {};
             self._then = now - (delta % self._delay);
             self._counter++;
             
-            if(self._counter == Number.MAX_VALUE - 1)
+            if(self._counter === Number.MAX_VALUE - 1)
             {
                 self._counter = 0;
-            };
+            }
             
             for(i in self._callbacks)
             {
@@ -182,7 +160,7 @@ this.Elixir.Control = this.Elixir.Control || {};
             
             self.trigger(s.ANIMATION_TICK);
             
-            if(self._rep > 0 && self._counter == self._rep)
+            if(self._rep > 0 && self._counter === self._rep)
             {
                 self.trigger(s.ANIMATION_COMPLETE);
                 self.cancel();
