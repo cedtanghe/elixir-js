@@ -1,0 +1,6 @@
+{
+    "name": "elixir-js",
+    "dependencies": {
+        "jquery": "~1.*"
+    }
+}
