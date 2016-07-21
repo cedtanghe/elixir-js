@@ -17,26 +17,32 @@ this.Elixir.Control = this.Elixir.Control || {};
 {
     'use strict';
     
-    function SpriteSheet(element, config)
+    function SpriteSheet(config)
     {
         var self = this;
-        self.initialize(element, config);
+        self.initialize(config);
     }
     
     var p = Elixir.Util.extend(SpriteSheet, Elixir.Core.FrameAbstract);
     p._first = null;
+    p._element = null;
+    p._width = null;
+    p._height = null;
     p._source = null;
     p._cols = null;
     
     p._parent = p.initialize;
-    p.initialize = function(element, config)
+    p.initialize = function(config)
     {
         var self = this;
+        self._parent(config);
+        
         self._first = true;
+        self._element = config.element;
+        self._width = config.width || self._element.outerWidth();
+        self._height = config.height || self._element.outerHeight();
         self._source = config.source || null;
         self._cols = config.cols || config.totalFrames;
-        
-        self._parent(element, config);
     };
     
     p.draw = function()
@@ -53,6 +59,15 @@ this.Elixir.Control = this.Elixir.Control || {};
         
         self._element.css('background-position', posX + 'px ' + posY + 'px');
         self._first = false;
+    };
+    
+    p._parent = p.destroy;
+    p.destroy = function()
+    {
+        var self = this;
+        self._element = null;
+        
+        self._parent();
     };
     
     Elixir.Control.SpriteSheet = SpriteSheet;

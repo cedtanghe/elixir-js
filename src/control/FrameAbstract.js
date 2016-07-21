@@ -32,9 +32,6 @@ this.Elixir.Control = this.Elixir.Control || {};
     s.UNTIL_FINISHED = 'until_finished';
     
     var p = Elixir.Util.extend(FrameAbstract, Elixir.Core.Dispatcher);
-    p._element = null;
-    p._width = null;
-    p._height = null;
     p._currentFrame = null;
     p._totalFrames = null;
     p._loop = null;
@@ -47,10 +44,7 @@ this.Elixir.Control = this.Elixir.Control || {};
     {
         var self = this;
         
-        self._element = element;
         self._totalFrames = config.totalFrames;
-        self._width = config.width || self._element.outerWidth();
-        self._height = config.height || self._element.outerHeight();
         self._loop = config.loop === true ? true : false;
         self._state = s.STOP;
         self._until = null;
@@ -343,7 +337,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
         self._requestAnimation = null;
         
-        self._element = null;
+        
     };
     
     Elixir.Control.FrameAbstract = FrameAbstract;
