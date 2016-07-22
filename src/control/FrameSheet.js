@@ -50,6 +50,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         
         self._element = config.element;
         self._context = self._element.toString() === '[object HTMLCanvasElement]' ? self._element.getContext('2d') : null;
+        self._height = config.height || null;
         self._startFile = config.startFile || 0;
         
         if (self._startFile >= self._totalFrames)
@@ -292,7 +293,7 @@ this.Elixir.Control = this.Elixir.Control || {};
                 {
                     self._context.canvas.width = image.width;
                     self._context.canvas.height = image.height;
-
+                    
                     self._context.drawImage(
                         image, 
                         0,
