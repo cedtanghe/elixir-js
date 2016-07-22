@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test frame-sheet</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <canvas id="frame" style="position:absolute; top:50%; left:50%; transform:translate3D(-50%, -50%, 0);"></canvas>
+        
+        <script src="../../bower_components/jquery/dist/jquery.min.js"></script>
+        <script src="../../dist/elixir.min.js"></script>
+        
+        <script>
+            $(document).on('ready', function()
+            {
+                var frame = new Elixir.Control.FrameSheet({
+                    element: $('#frame')[0],
+                    totalFrames: 39,
+                    prefixFile: 'Intro_SGD_Parfum_',
+                    prefixTotalNumber: 5,
+                    directory: 'images/',
+                    preload: false
+                });
+                
+                frame.preload(function()
+                {
+                    frame.playUntil(frame.getTotalFrames() - 1, function()
+                    {
+                        frame.rewind();
+                    });
+                });
+               
+                frame.loadRange(0, 10, function()
+                {
+                    console.log('loaded');
+                });
+            });
+        </script>
+    </body>
+</html>

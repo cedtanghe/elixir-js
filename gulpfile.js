@@ -40,16 +40,14 @@ var paths = [
 gulp.task('compress-js', function()
 {
     gulp.src([
-        'src/**/*.js'
-    ])
-    .pipe(concat('elixir.min.js'))
-    .pipe(uglify().on('error', swallowError))
-    .pipe(gulp.dest('dist/'));
-    
-    gulp.src([
+        'src/Util.js',
+        'src/core/Dispatcher.js',
         'src/**/*.js'
     ])
     .pipe(concat('elixir.extended.js'))
+    .pipe(gulp.dest('dist/'))
+    .pipe(concat('elixir.min.js'))
+    .pipe(uglify().on('error', swallowError))
     .pipe(gulp.dest('dist/'));
 });
 

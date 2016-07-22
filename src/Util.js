@@ -179,6 +179,16 @@ this.Elixir = this.Elixir || {};
         return interpolate(normalize(value, min1, max1), min2, max2);
     };
     
+    s.pad = function(str, total)
+    {
+        while(str.length < total)
+        {
+           str = '0' + str;
+        }
+        
+        return str;
+    };
+    
     s.shuffle = function(arr)
     {
         var n = arr.length;

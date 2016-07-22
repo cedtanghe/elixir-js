@@ -179,6 +179,16 @@ this.Elixir = this.Elixir || {};
         return interpolate(normalize(value, min1, max1), min2, max2);
     };
     
+    s.pad = function(str, total)
+    {
+        while(str.length < total)
+        {
+           str = '0' + str;
+        }
+        
+        return str;
+    };
+    
     s.shuffle = function(arr)
     {
         var n = arr.length;
@@ -220,6 +230,100 @@ this.Elixir = this.Elixir || {};
     };
     
     Elixir.Util = Util;
+})(jQuery);
+
+/**
+ * @use Jquery
+ */
+
+this.Elixir = this.Elixir || {};
+this.Elixir.Core = this.Elixir.Core || {};
+
+/*
+|--------------------------------------------------------------------------
+| DISPATCHER
+|--------------------------------------------------------------------------
+*/
+
+(function($)
+{
+    'use strict';
+    
+    function Dispatcher()
+    {
+        var self = this;
+        self.initialize();
+    }
+    
+    var p = Dispatcher.prototype;
+    
+    p.initialize = function(){};
+    
+    p.has = function(e, callback)
+    {
+        e = e || null;
+        callback = callback || null;
+        
+        var self = this;
+        var events = $._data($(self)[0], 'events');
+        
+        if(events)
+        {
+            if(null === e)
+            {
+                return true;
+            }
+            
+            var evs = events['event_' + e];
+            
+            if(evs)
+            {
+                if(null === callback)
+                {
+                    return true;
+                }
+                
+                var i;
+                
+                for(i in evs)
+                {
+                    if(evs[i].handler === callback)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    };
+    
+    p.on = function(e, paramsOrCallback, callback)
+    {
+        var self = this;
+        
+        $(self).on(
+            'event_' + e, 
+            arguments.length === 3 ? paramsOrCallback : {}, 
+            arguments.length === 3 ? callback : paramsOrCallback
+        );
+    };
+    
+    p.off = function(e, callback)
+    {
+        var self = this;
+        $(self).off('event_' + e, callback);
+    };
+    
+    p.trigger = function(e, params)
+    {
+        var self = this;
+        params = params || {};
+        
+        $(self).trigger($.Event('event_' + e, params));
+    };
+    
+    Elixir.Core.Dispatcher = Dispatcher;
 })(jQuery);
 
 /**
@@ -376,10 +480,10 @@ this.Elixir.Control = this.Elixir.Control || {};
 {
     'use strict';
     
-    function FrameAbstract(element, config)
+    function FrameAbstract(config)
     {
         var self = this;
-        self.initialize(element, config);
+        self.initialize(config);
     }
     
     var s = FrameAbstract;
@@ -387,9 +491,11 @@ this.Elixir.Control = this.Elixir.Control || {};
     s.PLAY = 'play';
     s.REWIND = 'rewind';
     s.ANIMATION_FINISHED = 'animation_finished';
+    s.ANIMATION_FINISHED = 'animation_start';
     s.UNTIL_FINISHED = 'until_finished';
     
     var p = Elixir.Util.extend(FrameAbstract, Elixir.Core.Dispatcher);
+    p._firstRender = null;
     p._currentFrame = null;
     p._totalFrames = null;
     p._loop = null;
@@ -397,18 +503,24 @@ this.Elixir.Control = this.Elixir.Control || {};
     p._requestAnimationCreated = null;
     p._state = null;
     p._until = null;
+    p._startCallback = null;
+    p._endCallback = null;
+    p._untilCallback = null;
+    p._destroy = null;
     
-    p.initialize = function(element, config)
+    p.initialize = function(config)
     {
         var self = this;
         
+        self._currentFrame = config.currentFrame || 0;
         self._totalFrames = config.totalFrames;
         self._loop = config.loop === true ? true : false;
-        self._state = s.STOP;
         self._until = null;
-        
-        self._currentFrame = 0;
-        self.setCurrentFrame(config.currentFrame || 0);
+        self._startCallback = config.startCallback || null;
+        self._endCallback = config.endCallback || null;
+        self._untilCallback = null;
+        self._firstRender = false;
+        self._destroy = false;
         
         if(config.requestAnimation)
         {
@@ -425,6 +537,8 @@ this.Elixir.Control = this.Elixir.Control || {};
             self._requestAnimation = new Elixir.Control.RequestAnimation(1000 / 24, 0);
             self._requestAnimationCreated = true;
         }
+        
+        self._state = s.STOP;
     };
     
     p._onAnimationTick = function(e)
@@ -434,8 +548,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         switch(self._state)
         {
             case s.PLAY:
-                self.nextFrame(true);
-                
                 if(!self._loop && self._currentFrame === self._totalFrames - 1)
                 {
                     self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
@@ -445,12 +557,20 @@ this.Elixir.Control = this.Elixir.Control || {};
                         self._requestAnimation.cancel();
                     }
                     
+                    self.nextFrame(true);
                     self.trigger(s.ANIMATION_FINISHED);
+                    
+                    if (!self._destroy && self._endCallback)
+                    {
+                        self._endCallback();
+                    }
+                }
+                else
+                {
+                    self.nextFrame(true);
                 }
             break;
             case s.REWIND:
-                self.prevFrame(true);
-                
                 if(!self._loop && self._currentFrame === 0)
                 {
                     self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
@@ -460,7 +580,17 @@ this.Elixir.Control = this.Elixir.Control || {};
                         self._requestAnimation.cancel();
                     }
                     
+                    self.prevFrame(true);
                     self.trigger(s.ANIMATION_FINISHED);
+                    
+                    if (!self._destroy && self._endCallback)
+                    {
+                        self._endCallback();
+                    }
+                }
+                else
+                {
+                    self.prevFrame(true);
                 }
             break;
         }
@@ -511,22 +641,41 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
         
         self._currentFrame = value;
-        self.draw();
+        self._draw();
+        
+        if (self._firstRender)
+        {
+            self._firstRender = false;
+            self.trigger(s.ANIMATION_START);
+            
+            if (!self._destroy && self._startCallback)
+            {
+                self._startCallback();
+            }
+        }
         
         if(null !== self._until && self._until === self._currentFrame)
         {
-            self.stop();
+            self.stop(true);
             
             self.trigger(s.UNTIL_FINISHED, { frame:self._currentFrame });
+            
+            if (!self._destroy && self._untilCallback)
+            {
+                self._untilCallback();
+            }
+            
             self._until = null;
+            self._untilCallback = null;
         }
-        else if(!preserveUntil)
+        else if (!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
     };
     
-    p.draw = function()
+    p._draw = function()
     {
         throw 'This method is abstract';
     };
@@ -543,16 +692,23 @@ this.Elixir.Control = this.Elixir.Control || {};
         return self._totalFrames;
     };
     
+    p._setState = function(state)
+    {
+        var self = this;
+        self._state = state;
+    };
+    
     p.play = function(preserveUntil)
     {
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        self._state = s.PLAY;
+        self._setState(s.PLAY);
         
         if(!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
         
         if(!self._requestAnimation.has(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick))
@@ -566,11 +722,13 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    p.playUntil = function(until)
+    p.playUntil = function(until, callback)
     {
         var self = this;
         
         self._until = until;
+        self._untilCallback = callback;
+        
         self.play(true);
     };
     
@@ -579,11 +737,12 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        self._state = s.REWIND;
+        self._setState(s.REWIND);
         
         if(!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
         
         if(!self._requestAnimation.has(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick))
@@ -597,11 +756,13 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    p.rewindUntil = function(until)
+    p.rewindUntil = function(until, callback)
     {
         var self = this;
         
         self._until = until;
+        self._untilCallback = callback;
+        
         self.rewind(true);
     };
     
@@ -612,11 +773,12 @@ this.Elixir.Control = this.Elixir.Control || {};
         var self = this;
         
         self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
-        self._state = s.STOP;
+        self._setState(s.STOP);
         
         if(!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
     };
     
@@ -625,22 +787,18 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        
-        if(!preserveUntil)
-        {
-            self._until = null;
-        }
-        
-        self.setCurrentFrame(frame);
-        self.play();
+        self.setCurrentFrame(frame, preserveUntil);
+        self.play(preserveUntil);
     };
     
-    p.gotoAndPlayUntil = function(frame, until)
+    p.gotoAndPlayUntil = function(frame, until, callback)
     {
         var self = this;
         
         self._until = until;
-        self.setCurrentFrame(frame);
+        self._untilCallback = callback;
+        
+        self.setCurrentFrame(frame, true);
         self.play(true);
     };
     
@@ -649,22 +807,18 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        
-        if(!preserveUntil)
-        {
-            self._until = null;
-        }
-        
-        self.setCurrentFrame(frame);
-        self.rewind();
+        self.setCurrentFrame(frame, preserveUntil);
+        self.rewind(preserveUntil);
     };
     
-    p.gotoAndRewindUntil = function(frame, until)
+    p.gotoAndRewindUntil = function(frame, until, callback)
     {
         var self = this;
         
         self._until = until;
-        self.setCurrentFrame(frame);
+        self._untilCallback = callback;
+        
+        self.setCurrentFrame(frame, true);
         self.rewind(true);
     };
     
@@ -673,14 +827,8 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        
-        if(!preserveUntil)
-        {
-            self._until = null;
-        }
-        
-        self.setCurrentFrame(frame);
-        self.stop();
+        self.setCurrentFrame(frame, preserveUntil);
+        self.stop(preserveUntil);
     };
     
     p.destroy = function()
@@ -695,7 +843,10 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
         self._requestAnimation = null;
         
-        
+        self._startCallback = null;
+        self._endCallback = null;
+        self._untilCallback = null;
+        self._destroy = true;
     };
     
     Elixir.Control.FrameAbstract = FrameAbstract;
@@ -726,32 +877,35 @@ this.Elixir.Control = this.Elixir.Control || {};
         self.initialize(config);
     }
     
-    var p = Elixir.Util.extend(FrameSheet, Elixir.Core.FrameAbstract);
+    var s = FrameSheet;
+    s.PRELOAD_FINISHED = 'preload_finished';
+    
+    var p = Elixir.Util.extend(FrameSheet, Elixir.Control.FrameAbstract);
     p._context = null;
     p._element = null;
-    p._width = null;
-    p._height = null;
     p._startFile = null;
     p._prefixFile = null;
     p._extensionFile = null;
     p._prefixTotalNumber = null;
-    p._loadPackageOf = null;
     p._directory = null;
     p._directoryHD = null;
+    p._imageDirectory = null;
+    p._frameDrawn = null;
+    p._frames = null;
+    p._cacheFrameIndex = null;
+    p._cacheFrameTotal = null;
     
-    p._parent = p.initialize;
+    p._parentInitialize = p.initialize;
     p.initialize = function(config)
     {
         var self = this;
-        self._parent(config);
+        self._parentInitialize(config);
         
         self._element = config.element;
         self._context = self._element.toString() === '[object HTMLCanvasElement]' ? self._element.getContext('2d') : null;
-        self._width = config.width || self._element.outerWidth();
-        self._height = config.height || self._element.outerHeight();
         self._startFile = config.startFile || 0;
         
-        if (self._startFile > self._totalFrames)
+        if (self._startFile >= self._totalFrames)
         {
             self._startFile = self._totalFrames - 1;
         }
@@ -760,27 +914,239 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._extensionFile = config.extension || '.jpg';
         self._directory = config.directory;
         self._directoryHD = config.directoryHD || null;
+        self._imageDirectory = self._directory;
         self._prefixTotalNumber = config.prefixTotalNumber || 0;
-        self._loadPackageOf = config.loadPackageOf || 30;
+        self._frameDrawn = false;
+        self._frames = {};
         
-        if (self._loadPackageOf > self._totalFrames)
+        // Load images
+        self._cacheFrameIndex = self._currentFrame;
+        self._cacheFrameTotal = 0;
+        
+        if (config.preload !== false)
         {
-            self._loadPackageOf = Math.floor(self._totalFrames / 2);
+            self.preload(config.preloadCallback || null);
+        }
+        
+        // Render first image
+        self._draw();
+    };
+    
+    p.preload = function(callback)
+    {
+        var self = this;
+        
+        self._loadImage(self._directory + self.getFile(self._cacheFrameIndex), function(image)
+        {
+            if (self._cacheFrameTotal < self._totalFrames)
+            {
+                if (self._state === s.REWIND)
+                {
+                    self._cacheFrameIndex--;
+                    
+                    if (self._cacheFrameIndex > self._currentFrame)
+                    {
+                        self._cacheFrameIndex = self._currentFrame - 1;
+                    }
+                    
+                    if (self._cacheFrameIndex < 0)
+                    {
+                        self._cacheFrameIndex = self._totalFrames - 1;
+                    }
+                }
+                else
+                {
+                    self._cacheFrameIndex++;
+                    
+                    if (self._cacheFrameIndex < self._currentFrame)
+                    {
+                        self._cacheFrameIndex = self._currentFrame + 1;
+                    }
+                    
+                    self._cacheFrameIndex %= self._totalFrames;
+                }
+                
+                self.preload(callback);
+            }
+            else
+            {
+                self.trigger(s.PRELOAD_FINISHED);
+                
+                if (!self._destroy && callback)
+                {
+                    callback();
+                }
+            }
+        });
+    };
+    
+    p.loadRange = function(from, to, callback)
+    {
+        var self = this;
+        
+        if (from < 0)
+        {
+            from = 0;
+        }
+        
+        if (to > self._totalFrames)
+        {
+            to = self._totalFrames;
+        }
+        
+        if (from > to)
+        {
+            from = to;
+        }
+        
+        self._loadImage(self._directory + self.getFile(from), function(image)
+        {
+            from++;
+            
+            if (from < to)
+            {
+                self.loadRange(from, to, callback);
+            }
+            else
+            {
+                if (!self._destroy && callback)
+                {
+                   callback();
+                }
+            }
+        });
+    };
+    
+    p._parentAnimationTick = p._onAnimationTick;
+    p._onAnimationTick = function(e)
+    {
+        var self = e.data.self;
+        
+        if (!self._frameDrawn)
+        {
+            return;
+        }
+        
+        self._parentAnimationTick(e);
+    };
+    
+    p._parentSetState = p._setState;
+    p._setState = function(state)
+    {
+        var self = this;
+        self._parentSetState(state);
+        
+        if (self._state === self.STOP)
+        {
+            // Load HD
+            self._loadImageHD();
+        }
+        else
+        {
+            clearTimeout(self._timerHD);
+            self._timerHD = null;
         }
     };
     
-    p.draw = function()
+    p._loadImageHD = function()
     {
         var self = this;
-        var img = 'todo';
         
-        self._context.drawImage(img, 0, 0, self._width, self._height);
+        if (null === self._timerHD && null !== self._directoryHD)
+        {
+            self._timerHD = setTimeout(function()
+            {
+                self._timerHD = null;
+                self._imageDirectory = self._directoryHD;
+                self._draw();
+                self._imageDirectory = self._directory;
+            }, 200);
+        }
+    };
+    
+    p._loadImage = function(src, callback)
+    {
+        var self = this;
+        
+        // Search in cache
+        if(!self._frames.hasOwnProperty(src))
+        {
+            self._frames[src] = { src: src, loaded: false, image: null, first: true };
+        }
+        
+        var image;
+        
+        if (!self._frames[src].loaded)
+        {
+            image = new Image();
+            
+            image.onload = function()
+            {
+                self._frames[src].image = image;
+                self._frames[src].loaded = true;
+                
+                if (self._frames[src].first)
+                {
+                    self._frames[src].first = false;
+                    self._cacheFrameTotal++;
+                }
+
+                if (!self._destroy && callback)
+                {
+                    callback(image);
+                }
+            };
+
+            image.src = src;
+        }
+        else if (!self._destroy && callback)
+        {
+            image = self._frames[src].image;
+            callback(image);
+        }
+    };
+    
+    p._draw = function()
+    {
+        var self = this;
+        self._frameDrawn = false;
+        
+        (function(frame)
+        {
+            self._loadImage(self._imageDirectory + self.getFile(frame), function(image)
+            {
+                if (self._currentFrame !== frame)
+                {
+                    return;
+                }
+
+                if (null !== self._context)
+                {
+                    self._context.canvas.width = image.width;
+                    self._context.canvas.height = image.height;
+
+                    self._context.drawImage(
+                        image, 
+                        0,
+                        0,
+                        image.width,
+                        image.height
+                    );
+                }
+                else
+                {
+                    self._element.css('background-image', image.src);
+                }
+
+                self._frameDrawn = true;
+            });
+        })(self._currentFrame);
     };
     
     p.getPrefix = function(index)
     {
         var self = this;
-        return self._prefixFile + self.pad(index, self._prefixTotalNumber);
+        return self._prefixFile + Elixir.Util.pad(String(index), self._prefixTotalNumber);
     };
     
     p.getFile = function(index)
@@ -789,14 +1155,24 @@ this.Elixir.Control = this.Elixir.Control || {};
         return self.getPrefix((index + self._startFile)) + self._extensionFile;
     };
     
-    p._parent = p.destroy;
+    p._parentDestroy = p.destroy;
     p.destroy = function()
     {
         var self = this;
+        self._parentDestroy();
+        
+        clearTimeout(self._timerHD);
+        
+        var prop;
+        
+        for (prop in self._frames)
+        {
+            self._frames[prop].image = null;
+        }
+        
+        self._frames = null;
         self._element = null;
         self._context = null;
-        
-        self._parent();
     };
     
     Elixir.Control.FrameSheet = FrameSheet;
@@ -1726,146 +2102,52 @@ this.Elixir.Control = this.Elixir.Control || {};
         self.initialize(config);
     }
     
-    var p = Elixir.Util.extend(SpriteSheet, Elixir.Core.FrameAbstract);
-    p._first = null;
+    var p = Elixir.Util.extend(SpriteSheet, Elixir.Control.FrameAbstract);
     p._element = null;
     p._width = null;
     p._height = null;
     p._source = null;
     p._cols = null;
     
-    p._parent = p.initialize;
+    p._parentInitialize = p.initialize;
     p.initialize = function(config)
     {
         var self = this;
-        self._parent(config);
+        self._parentInitialize(config);
         
-        self._first = true;
         self._element = config.element;
         self._width = config.width || self._element.outerWidth();
         self._height = config.height || self._element.outerHeight();
         self._source = config.source || null;
         self._cols = config.cols || config.totalFrames;
+        
+        // Render first image
+        self._draw();
     };
     
-    p.draw = function()
+    p._draw = function()
     {
         var self = this;
         
         var posX = - (self._currentFrame % self._cols) * self._width;
         var posY = - Math.floor(self._currentFrame / self._cols) * self._height;
         
-        if (null !== self._source && self._first)
+        if (null !== self._source)
         {
             self._element.css('background-image', self._source);
         }
         
         self._element.css('background-position', posX + 'px ' + posY + 'px');
-        self._first = false;
     };
     
-    p._parent = p.destroy;
+    p._parentDestroy = p.destroy;
     p.destroy = function()
     {
         var self = this;
         self._element = null;
         
-        self._parent();
+        self._parentDestroy();
     };
     
     Elixir.Control.SpriteSheet = SpriteSheet;
-})(jQuery);
-
-/**
- * @use Jquery
- */
-
-this.Elixir = this.Elixir || {};
-this.Elixir.Core = this.Elixir.Core || {};
-
-/*
-|--------------------------------------------------------------------------
-| DISPATCHER
-|--------------------------------------------------------------------------
-*/
-
-(function($)
-{
-    'use strict';
-    
-    function Dispatcher()
-    {
-        var self = this;
-        self.initialize();
-    }
-    
-    var p = Dispatcher.prototype;
-    
-    p.initialize = function(){};
-    
-    p.has = function(e, callback)
-    {
-        e = e || null;
-        callback = callback || null;
-        
-        var self = this;
-        var events = $._data($(self)[0], 'events');
-        
-        if(events)
-        {
-            if(null === e)
-            {
-                return true;
-            }
-            
-            var evs = events['event_' + e];
-            
-            if(evs)
-            {
-                if(null === callback)
-                {
-                    return true;
-                }
-                
-                var i;
-                
-                for(i in evs)
-                {
-                    if(evs[i].handler === callback)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        return false;
-    };
-    
-    p.on = function(e, paramsOrCallback, callback)
-    {
-        var self = this;
-        
-        $(self).on(
-            'event_' + e, 
-            arguments.length === 3 ? paramsOrCallback : {}, 
-            arguments.length === 3 ? callback : paramsOrCallback
-        );
-    };
-    
-    p.off = function(e, callback)
-    {
-        var self = this;
-        $(self).off('event_' + e, callback);
-    };
-    
-    p.trigger = function(e, params)
-    {
-        var self = this;
-        params = params || {};
-        
-        $(self).trigger($.Event('event_' + e, params));
-    };
-    
-    Elixir.Core.Dispatcher = Dispatcher;
 })(jQuery);

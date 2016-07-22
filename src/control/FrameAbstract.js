@@ -18,10 +18,10 @@ this.Elixir.Control = this.Elixir.Control || {};
 {
     'use strict';
     
-    function FrameAbstract(element, config)
+    function FrameAbstract(config)
     {
         var self = this;
-        self.initialize(element, config);
+        self.initialize(config);
     }
     
     var s = FrameAbstract;
@@ -29,9 +29,11 @@ this.Elixir.Control = this.Elixir.Control || {};
     s.PLAY = 'play';
     s.REWIND = 'rewind';
     s.ANIMATION_FINISHED = 'animation_finished';
+    s.ANIMATION_FINISHED = 'animation_start';
     s.UNTIL_FINISHED = 'until_finished';
     
     var p = Elixir.Util.extend(FrameAbstract, Elixir.Core.Dispatcher);
+    p._firstRender = null;
     p._currentFrame = null;
     p._totalFrames = null;
     p._loop = null;
@@ -39,18 +41,24 @@ this.Elixir.Control = this.Elixir.Control || {};
     p._requestAnimationCreated = null;
     p._state = null;
     p._until = null;
+    p._startCallback = null;
+    p._endCallback = null;
+    p._untilCallback = null;
+    p._destroy = null;
     
-    p.initialize = function(element, config)
+    p.initialize = function(config)
     {
         var self = this;
         
+        self._currentFrame = config.currentFrame || 0;
         self._totalFrames = config.totalFrames;
         self._loop = config.loop === true ? true : false;
-        self._state = s.STOP;
         self._until = null;
-        
-        self._currentFrame = 0;
-        self.setCurrentFrame(config.currentFrame || 0);
+        self._startCallback = config.startCallback || null;
+        self._endCallback = config.endCallback || null;
+        self._untilCallback = null;
+        self._firstRender = false;
+        self._destroy = false;
         
         if(config.requestAnimation)
         {
@@ -67,6 +75,8 @@ this.Elixir.Control = this.Elixir.Control || {};
             self._requestAnimation = new Elixir.Control.RequestAnimation(1000 / 24, 0);
             self._requestAnimationCreated = true;
         }
+        
+        self._state = s.STOP;
     };
     
     p._onAnimationTick = function(e)
@@ -76,8 +86,6 @@ this.Elixir.Control = this.Elixir.Control || {};
         switch(self._state)
         {
             case s.PLAY:
-                self.nextFrame(true);
-                
                 if(!self._loop && self._currentFrame === self._totalFrames - 1)
                 {
                     self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
@@ -87,12 +95,20 @@ this.Elixir.Control = this.Elixir.Control || {};
                         self._requestAnimation.cancel();
                     }
                     
+                    self.nextFrame(true);
                     self.trigger(s.ANIMATION_FINISHED);
+                    
+                    if (!self._destroy && self._endCallback)
+                    {
+                        self._endCallback();
+                    }
+                }
+                else
+                {
+                    self.nextFrame(true);
                 }
             break;
             case s.REWIND:
-                self.prevFrame(true);
-                
                 if(!self._loop && self._currentFrame === 0)
                 {
                     self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
@@ -102,7 +118,17 @@ this.Elixir.Control = this.Elixir.Control || {};
                         self._requestAnimation.cancel();
                     }
                     
+                    self.prevFrame(true);
                     self.trigger(s.ANIMATION_FINISHED);
+                    
+                    if (!self._destroy && self._endCallback)
+                    {
+                        self._endCallback();
+                    }
+                }
+                else
+                {
+                    self.prevFrame(true);
                 }
             break;
         }
@@ -153,22 +179,41 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
         
         self._currentFrame = value;
-        self.draw();
+        self._draw();
+        
+        if (self._firstRender)
+        {
+            self._firstRender = false;
+            self.trigger(s.ANIMATION_START);
+            
+            if (!self._destroy && self._startCallback)
+            {
+                self._startCallback();
+            }
+        }
         
         if(null !== self._until && self._until === self._currentFrame)
         {
-            self.stop();
+            self.stop(true);
             
             self.trigger(s.UNTIL_FINISHED, { frame:self._currentFrame });
+            
+            if (!self._destroy && self._untilCallback)
+            {
+                self._untilCallback();
+            }
+            
             self._until = null;
+            self._untilCallback = null;
         }
-        else if(!preserveUntil)
+        else if (!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
     };
     
-    p.draw = function()
+    p._draw = function()
     {
         throw 'This method is abstract';
     };
@@ -185,16 +230,23 @@ this.Elixir.Control = this.Elixir.Control || {};
         return self._totalFrames;
     };
     
+    p._setState = function(state)
+    {
+        var self = this;
+        self._state = state;
+    };
+    
     p.play = function(preserveUntil)
     {
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        self._state = s.PLAY;
+        self._setState(s.PLAY);
         
         if(!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
         
         if(!self._requestAnimation.has(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick))
@@ -208,11 +260,13 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    p.playUntil = function(until)
+    p.playUntil = function(until, callback)
     {
         var self = this;
         
         self._until = until;
+        self._untilCallback = callback;
+        
         self.play(true);
     };
     
@@ -221,11 +275,12 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        self._state = s.REWIND;
+        self._setState(s.REWIND);
         
         if(!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
         
         if(!self._requestAnimation.has(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick))
@@ -239,11 +294,13 @@ this.Elixir.Control = this.Elixir.Control || {};
         }
     };
     
-    p.rewindUntil = function(until)
+    p.rewindUntil = function(until, callback)
     {
         var self = this;
         
         self._until = until;
+        self._untilCallback = callback;
+        
         self.rewind(true);
     };
     
@@ -254,11 +311,12 @@ this.Elixir.Control = this.Elixir.Control || {};
         var self = this;
         
         self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
-        self._state = s.STOP;
+        self._setState(s.STOP);
         
         if(!preserveUntil)
         {
             self._until = null;
+            self._untilCallback = null;
         }
     };
     
@@ -267,22 +325,18 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        
-        if(!preserveUntil)
-        {
-            self._until = null;
-        }
-        
-        self.setCurrentFrame(frame);
-        self.play();
+        self.setCurrentFrame(frame, preserveUntil);
+        self.play(preserveUntil);
     };
     
-    p.gotoAndPlayUntil = function(frame, until)
+    p.gotoAndPlayUntil = function(frame, until, callback)
     {
         var self = this;
         
         self._until = until;
-        self.setCurrentFrame(frame);
+        self._untilCallback = callback;
+        
+        self.setCurrentFrame(frame, true);
         self.play(true);
     };
     
@@ -291,22 +345,18 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        
-        if(!preserveUntil)
-        {
-            self._until = null;
-        }
-        
-        self.setCurrentFrame(frame);
-        self.rewind();
+        self.setCurrentFrame(frame, preserveUntil);
+        self.rewind(preserveUntil);
     };
     
-    p.gotoAndRewindUntil = function(frame, until)
+    p.gotoAndRewindUntil = function(frame, until, callback)
     {
         var self = this;
         
         self._until = until;
-        self.setCurrentFrame(frame);
+        self._untilCallback = callback;
+        
+        self.setCurrentFrame(frame, true);
         self.rewind(true);
     };
     
@@ -315,14 +365,8 @@ this.Elixir.Control = this.Elixir.Control || {};
         preserveUntil = true === preserveUntil ? true : false;
         
         var self = this;
-        
-        if(!preserveUntil)
-        {
-            self._until = null;
-        }
-        
-        self.setCurrentFrame(frame);
-        self.stop();
+        self.setCurrentFrame(frame, preserveUntil);
+        self.stop(preserveUntil);
     };
     
     p.destroy = function()
@@ -337,7 +381,10 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._requestAnimation.off(Elixir.Control.RequestAnimation.ANIMATION_TICK, self._onAnimationTick);
         self._requestAnimation = null;
         
-        
+        self._startCallback = null;
+        self._endCallback = null;
+        self._untilCallback = null;
+        self._destroy = true;
     };
     
     Elixir.Control.FrameAbstract = FrameAbstract;
