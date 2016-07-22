@@ -36,6 +36,7 @@ this.Elixir.Control = this.Elixir.Control || {};
     p._directory = null;
     p._directoryHD = null;
     p._imageDirectory = null;
+    p._preloading = null;
     p._frameDrawn = null;
     p._frames = null;
     p._cacheFrameIndex = null;
@@ -62,6 +63,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._directoryHD = config.directoryHD || null;
         self._imageDirectory = self._directory;
         self._prefixTotalNumber = config.prefixTotalNumber || 0;
+        self._preloading = false;
         self._frameDrawn = false;
         self._frames = {};
         
@@ -81,6 +83,7 @@ this.Elixir.Control = this.Elixir.Control || {};
     p.preload = function(callback)
     {
         var self = this;
+        self._preloading = true;
         
         self._loadImage(self._directory + self.getFile(self._cacheFrameIndex), function(image)
         {
@@ -112,10 +115,14 @@ this.Elixir.Control = this.Elixir.Control || {};
                     self._cacheFrameIndex %= self._totalFrames;
                 }
                 
-                self.preload(callback);
+                if (self._preloading && !self._destroy)
+                {
+                    self.preload(callback);
+                }
             }
             else
             {
+                self._preloading = false;
                 self.trigger(s.PRELOAD_FINISHED);
                 
                 if (!self._destroy && callback)
@@ -124,6 +131,18 @@ this.Elixir.Control = this.Elixir.Control || {};
                 }
             }
         });
+    };
+    
+    p.stopPreloading = function()
+    {
+        var self = this;
+        self._preloading = false;
+    };
+    
+    p.isInPreloading = function()
+    {
+        var self = this;
+        return self._preloading;
     };
     
     p.loadRange = function(from, to, callback)
@@ -151,7 +170,10 @@ this.Elixir.Control = this.Elixir.Control || {};
             
             if (from < to)
             {
-                self.loadRange(from, to, callback);
+                if (!self._destroy)
+                {
+                    self.loadRange(from, to, callback);
+                }
             }
             else
             {
