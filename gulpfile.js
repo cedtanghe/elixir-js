@@ -1,8 +1,8 @@
 /*
-|--------------------------------------------------------------------------
-| IMPORTS
-|--------------------------------------------------------------------------
-*/
+ |--------------------------------------------------------------------------
+ | IMPORTS
+ |--------------------------------------------------------------------------
+ */
 
 var gulp = require('gulp');
 var jshint = require('gulp-jshint');
@@ -12,32 +12,33 @@ var concat = require('gulp-concat');
 var watch = require('gulp-watch');
 
 /*
-|--------------------------------------------------------------------------
-| CONFIGURATION
-|--------------------------------------------------------------------------
-*/
+ |--------------------------------------------------------------------------
+ | CONFIGURATION
+ |--------------------------------------------------------------------------
+ */
 
 function swallowError(error)
 {
     // If you want details of the error in the console
     console.log(error.toString());
     this.emit('end');
-};
+}
+;
 
 var paths = [
     'src/'
 ];
 
 /*
-|--------------------------------------------------------------------------
-| TASKS
-|--------------------------------------------------------------------------
-*/
+ |--------------------------------------------------------------------------
+ | TASKS
+ |--------------------------------------------------------------------------
+ */
 
 /**
  * Compress JS
  */
-gulp.task('compress-js', function()
+gulp.task('compress-js', function ()
 {
     gulp.src([
         'src/Util.js',
@@ -54,9 +55,9 @@ gulp.task('compress-js', function()
 /**
  * Lint
  */
-gulp.task('lint', function()
+gulp.task('lint', function ()
 {
-    paths.forEach(function(path)
+    paths.forEach(function (path)
     {
         gulp.src([
             'dist/elixir.extended.js'
@@ -71,14 +72,14 @@ gulp.task('lint', function()
  */
 gulp.task('watch', function ()
 {
-    paths.forEach(function(path)
+    paths.forEach(function (path)
     {
         gulp.watch([
             'src/**/*.js'
-        ], 
+        ],
         ['compress-js']);
     });
 });
 
 // Launch all
-gulp.task('default', ['compress-js', 'watch'], function(){});
+gulp.task('default', ['compress-js', 'watch'], function (){});

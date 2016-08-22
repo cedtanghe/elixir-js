@@ -889,6 +889,7 @@ this.Elixir.Control = this.Elixir.Control || {};
     p._prefixTotalNumber = null;
     p._directory = null;
     p._directoryHD = null;
+    p._enableHD = null;
     p._imageDirectory = null;
     p._preloading = null;
     p._frameDrawn = null;
@@ -906,16 +907,11 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._context = self._element.toString() === '[object HTMLCanvasElement]' ? self._element.getContext('2d') : null;
         self._height = config.height || null;
         self._startFile = config.startFile || 0;
-        
-        if (self._startFile >= self._totalFrames)
-        {
-            self._startFile = self._totalFrames - 1;
-        }
-        
         self._prefixFile = config.prefixFile || '';
         self._extensionFile = config.extension || '.jpg';
         self._directory = config.directory;
         self._directoryHD = config.directoryHD || null;
+        self._enableHD = config.enableHD || null !== self._directoryHD;
         self._imageDirectory = self._directory;
         self._prefixTotalNumber = config.prefixTotalNumber || 0;
         self._preloading = false;
@@ -1059,23 +1055,41 @@ this.Elixir.Control = this.Elixir.Control || {};
         var self = this;
         self._parentSetState(state);
         
-        if (self._state === self.STOP)
+        if (self._state === self.STOP && self.isHD())
         {
             // Load HD
             self._loadImageHD();
         }
-        else
+        else if (null !== self._timerHD)
         {
             clearTimeout(self._timerHD);
             self._timerHD = null;
         }
     };
     
+    p.enableHD = function(value)
+    {
+        var self = this;
+        self._enableHD = value;
+        
+        if (!self._enableHD && null !== self._timerHD)
+        {
+            clearTimeout(self._timerHD);
+            self._timerHD = null;
+        }
+    };
+    
+    p.isHD = function(value)
+    {
+        var self = this;
+        return self._enableHD && null !== self._directoryHD;
+    };
+    
     p._loadImageHD = function()
     {
         var self = this;
         
-        if (null === self._timerHD && null !== self._directoryHD)
+        if (null === self._timerHD && null !== self._directoryHD && self._enableHD)
         {
             self._timerHD = setTimeout(function()
             {

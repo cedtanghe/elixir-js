@@ -9,15 +9,15 @@ this.Elixir = this.Elixir || {};
 this.Elixir.Control = this.Elixir.Control || {};
 
 /*
-|--------------------------------------------------------------------------
-| SEQUENCER ITEM
-|--------------------------------------------------------------------------
-*/    
-    
+ |--------------------------------------------------------------------------
+ | SEQUENCER ITEM
+ |--------------------------------------------------------------------------
+ */
+
 (function($)
 {
     'use strict';
-    
+
     /**
      * @internal
      * @see Elixir.Control.Sequencer#addItem
@@ -27,7 +27,7 @@ this.Elixir.Control = this.Elixir.Control || {};
         var self = this;
         self.initialize(item, launch, launchCallbackOrEvent, close, closeCallbackOrEvent);
     }
-    
+
     var p = SequencerItem.prototype;
     p.item = null;
     p.status = null;
@@ -37,11 +37,11 @@ this.Elixir.Control = this.Elixir.Control || {};
     p.closeCallbackOrEvent = null;
     p._launchId = null;
     p._closeId = null;
-    
+
     p.initialize = function(item, launch, launchCallbackOrEvent, close, closeCallbackOrEvent)
     {
         var self = this;
-        
+
         self.item = item || null;
         self.status = Elixir.Control.Sequencer.CLOSE_FINISHED;
         self.launch = launch || null;
@@ -51,54 +51,52 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._launchId = null;
         self._closeId = null;
     };
-    
+
     p.launchTime = function(callback, time)
     {
         var self = this;
         clearTimeout(self._launchId);
-        
+
         self._launchId = setTimeout(
-            function()
-            {
-                if(self.status === Elixir.Control.Sequencer.CLOSE_FINISHED)
+                function()
                 {
-                    callback(self.item);
-                }
-            }, 
-            time
-        );
+                    if (self.status === Elixir.Control.Sequencer.CLOSE_FINISHED) {
+                        callback(self.item);
+                    }
+                },
+                time
+                );
     };
-    
+
     p.closeTime = function(callback, time)
     {
         var self = this;
         clearTimeout(self._closeId);
-        
+
         self._closeId = setTimeout(
-            function()
-            {
-                if(self.status === Elixir.Control.Sequencer.LAUNCH_FINISHED)
+                function()
                 {
-                    callback(self.item);
-                }
-            }, 
-            time
-        );
+                    if (self.status === Elixir.Control.Sequencer.LAUNCH_FINISHED) {
+                        callback(self.item);
+                    }
+                },
+                time
+                );
     };
-    
+
     p.destroy = function()
     {
         var self = this;
-        
+
         clearTimeout(self._launchId);
         clearTimeout(self._closeId);
-        
+
         self.item = null;
         self.launch = null;
         self.launchCallbackOrEvent = null;
         self.close = null;
         self.closeCallbackOrEvent = null;
     };
-    
+
     Elixir.Control.SequencerItem = SequencerItem;
 })(jQuery);

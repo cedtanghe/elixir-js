@@ -26,12 +26,12 @@
                 
                 frame.preload(function()
                 {
-                    frame.playUntil(frame.getTotalFrames() - 1, function()
+                    frame.playUntil(frame.getTotalFrames() - 1, function ()
                     {
                         frame.rewind();
                     });
                 });
-               
+
                 frame.loadRange(0, 10, function()
                 {
                     console.log('loaded');
