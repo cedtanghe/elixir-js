@@ -42,6 +42,8 @@ this.Elixir.Control = this.Elixir.Control || {};
     p._frames = null;
     p._cacheFrameIndex = null;
     p._cacheFrameTotal = null;
+    p._width = null;
+    p._height = null;
 
     p._parentInitialize = p.initialize;
     p.initialize = function(config)
@@ -63,15 +65,18 @@ this.Elixir.Control = this.Elixir.Control || {};
         self._preloading = false;
         self._frameDrawn = false;
         self._frames = {};
-
+        
+        self._width = config.width || null;
+        self._height = config.height || null;
+        
         // Load images
         self._cacheFrameIndex = self._currentFrame;
         self._cacheFrameTotal = 0;
-
+        
         if (config.preload !== false) {
             self.preload(config.preloadCallback || null);
         }
-
+        
         // Render first image
         self._draw();
     };
@@ -164,7 +169,35 @@ this.Elixir.Control = this.Elixir.Control || {};
             }
         });
     };
-
+    
+    p.setWidth = function(value)
+    {
+        var self = this;
+        
+        self._width = value;
+        self._draw();
+    };
+    
+    p.getWidth = function()
+    {
+        var self = this;
+        return self._width || self._context.canvas.width;
+    };
+    
+    p.setHeight = function(value)
+    {
+        var self = this;
+        
+        self._height = value;
+        self._draw();
+    };
+    
+    p.getHeight = function()
+    {
+        var self = this;
+        return self._height || self._context.canvas.height;
+    };
+    
     p._parentAnimationTick = p._onAnimationTick;
     p._onAnimationTick = function(e)
     {
@@ -276,16 +309,20 @@ this.Elixir.Control = this.Elixir.Control || {};
                 }
 
                 if (null !== self._context) {
-                    self._context.canvas.width = image.width;
-                    self._context.canvas.height = image.height;
+                    
+                    var w = null !== self._width ? self._width : image.width;
+                    var h = null !== self._height ? self._height : image.height;
+                    
+                    self._context.canvas.width = w;
+                    self._context.canvas.height = h;
 
                     self._context.drawImage(
-                            image,
-                            0,
-                            0,
-                            image.width,
-                            image.height
-                            );
+                        image,
+                        0,
+                        0,
+                        w,
+                        h
+                    );
                 }
                 else {
                     self._element.css('background-image', image.src);
